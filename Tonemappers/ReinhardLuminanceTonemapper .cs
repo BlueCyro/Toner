@@ -8,7 +8,7 @@ namespace Scratch;
 /// Performs tonemapping via Reinhard acting on luminance only, allows defining a white point
 /// </summary>
 /// <param name="max_white">The maximum white point of the input or output color to tonemap against</param>
-public struct ReinhardLuminanceTonemapper(float max_white) : IToneMapper
+public struct ReinhardLuminanceTonemapper(float max_white = 1f) : IToneMapper
 {
     /// <summary>
     /// Tonemaps HDR RGB values into SDR RGB values via Reinhard
@@ -17,14 +17,14 @@ public struct ReinhardLuminanceTonemapper(float max_white) : IToneMapper
     /// <param name="exposure">Exposure to tonemap at</param>
     /// <returns>SDR RGB values</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Vector3 PerformTonemap(in Vector3 color, in float exposure)
+    public readonly Vector3 PerformTonemap(in Vector3 color, in float exposure)
     {
         
         float oldLum = (color * MathF.Exp(exposure)).Luminance();
         float num = oldLum * (1f + (oldLum / (max_white * max_white)));
         float newLum = num  / (1f + oldLum);
 
-        return color.ChangeLuminance(newLum);;
+        return color.ChangeLuminance(newLum);
     }
 
 
@@ -36,7 +36,7 @@ public struct ReinhardLuminanceTonemapper(float max_white) : IToneMapper
     /// <param name="exposure">Exposure to inversely tonemap at</param>
     /// <returns>Approximated HDR RGB values</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Vector3 PerformInverse(in Vector3 color, in float exposure)
+    public readonly Vector3 PerformInverse(in Vector3 color, in float exposure)
 	{
         float oldLum = color.Luminance();
         float newLum = -(oldLum / Math.Min((oldLum / (max_white * max_white)) - 1.0f, -0.1f));

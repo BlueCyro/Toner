@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Numerics;
 using ImageMagick;
+using System.Runtime.Intrinsics;
 
 
 namespace Scratch;
@@ -13,6 +14,7 @@ namespace Scratch;
 /// </summary>
 public static class ToneMapping
 {
+    static readonly Vector3 LuminanceWeight = new(0.2126f, 0.7152f, 0.0722f);
     static readonly Vector3 sRGBHelperConstant = new(0.055f);
     static readonly Vector3 sRGBToLinearAddend = sRGBHelperConstant / 1.055f;
     static readonly Vector3 sRGBLowThreshold = new(0.04045f);
@@ -35,11 +37,10 @@ public static class ToneMapping
     {
         Vector3 col = from.PerformInverse(SrgbToLinear(color / 65535f), 1f);
 
-
         if (roundTrip)
             col = LinearToSrgb(Vector3.Clamp(to.PerformTonemap(col, exposure), Vector3.Zero, Vector3.One));
         else
-            col *= (float)Math.Exp(exposure);
+            col *= MathF.Exp(exposure);
 
 
         col *= 65535f;
@@ -103,11 +104,11 @@ public static class ToneMapping
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector3 SrgbToLinear(in Vector3 color)
     {
-        Span<bool> isLo = color.LessThanOrEqual(sRGBLowThreshold);
+        Vector128<float> isLo = color.LessThanOrEqual(sRGBLowThreshold);
 
         Vector3 loPart = color / 12.92f;
         Vector3 hiPart = (color + sRGBToLinearAddend).Pow(sRGBToLinearPower);
-        return loPart.Mask(isLo, hiPart);
+        return loPart.Mask(hiPart, isLo);
     }
 
 
@@ -120,11 +121,11 @@ public static class ToneMapping
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector3 LinearToSrgb(in Vector3 color)
     {
-        Span<bool> isLo = color.LessThanOrEqual(LinearLowThreshold);
+        Vector128<float> isLo = color.LessThanOrEqual(LinearLowThreshold);
 
         Vector3 loPart = color * 12.92f;
         Vector3 hiPart = color.Pow(LinearTosRGBPower) * 1.055f - sRGBHelperConstant;
-        return loPart.Mask(isLo, hiPart);
+        return loPart.Mask(hiPart, isLo);
     }
 
 
@@ -151,6 +152,6 @@ public static class ToneMapping
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static float Luminance(in this Vector3 color)
     {
-        return Vector3.Dot(color, new(0.2126f, 0.7152f, 0.0722f));
+        return Vector3.Dot(color, LuminanceWeight);
     }
 }

@@ -74,7 +74,7 @@
             <param name="exposure">Exposure to up-map at</param>
             <returns>Approximated HDR RGB values</returns>
         </member>
-        <member name="T:Scratch.BT2556ATonemapper">
+        <member name="T:Scratch.BT2446ATonemapper">
             <summary>
             <para>Performs tonemapping via standard defined in Report ITU-R BT.2446-1: Page 12 of <see href="https://www.itu.int/dms_pub/itu-r/opb/rep/R-REP-BT.2446-1-2021-PDF-E.pdf"/></para>
             <para>Keeps color relationships intact, more suitable for preserving the look of SDR content on HDR displays, re-tonemapping is lackluster</para>
@@ -83,7 +83,7 @@
             <param name="targetNits">Output HDR nits</param>
             <param name="fast">Whether to use the 'fast' path. NOTE: Fast path is currently broken</param>
         </member>
-        <member name="M:Scratch.BT2556ATonemapper.#ctor(System.Single,System.Single,System.Boolean)">
+        <member name="M:Scratch.BT2446ATonemapper.#ctor(System.Single,System.Single,System.Boolean)">
             <summary>
             <para>Performs tonemapping via standard defined in Report ITU-R BT.2446-1: Page 12 of <see href="https://www.itu.int/dms_pub/itu-r/opb/rep/R-REP-BT.2446-1-2021-PDF-E.pdf"/></para>
             <para>Keeps color relationships intact, more suitable for preserving the look of SDR content on HDR displays, re-tonemapping is lackluster</para>
@@ -92,7 +92,7 @@
             <param name="targetNits">Output HDR nits</param>
             <param name="fast">Whether to use the 'fast' path. NOTE: Fast path is currently broken</param>
         </member>
-        <member name="M:Scratch.BT2556ATonemapper.PerformTonemap(System.Numerics.Vector3@,System.Single@)">
+        <member name="M:Scratch.BT2446ATonemapper.PerformTonemap(System.Numerics.Vector3@,System.Single@)">
             <summary>
             Performs inverse tonemap assuming BT.2446 standard NOTE: NOT implemented
             </summary>
@@ -101,7 +101,7 @@
             <returns></returns>
             <exception cref="T:System.NotImplementedException"></exception>
         </member>
-        <member name="M:Scratch.BT2556ATonemapper.PerformInverse(System.Numerics.Vector3@,System.Single@)">
+        <member name="M:Scratch.BT2446ATonemapper.PerformInverse(System.Numerics.Vector3@,System.Single@)">
             <summary>
             Performs inverse tonmapping assuming BT.2446
             </summary>
@@ -234,6 +234,28 @@
             </summary>
             <param name="color">The RGB values to get the luminance of</param>
             <returns>The perceived luminance of the input</returns>
+        </member>
+        <member name="T:Scratch.VectorHelpers">
+            <summary>
+            Helper class for a few specific functions that intrinsic vectors lack
+            </summary>
+        </member>
+        <member name="M:Scratch.VectorHelpers.Mask(System.Numerics.Vector3@,System.Numerics.Vector3@,System.Runtime.Intrinsics.Vector128{System.Single})">
+            <summary>
+            Performs a component mask based on input flags. Essentially: "flags ? from : to" on a per-component basis
+            </summary>
+            <param name="from"></param>
+            <param name="other"></param>
+            <param name="flags"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Scratch.VectorHelpers.LessThanOrEqual(System.Numerics.Vector3@,System.Numerics.Vector3@)">
+            <summary>
+            Does a component-wise greater or less than
+            </summary>
+            <param name="left"></param>
+            <param name="right"></param>
+            <returns></returns>
         </member>
     </members>
 </doc>

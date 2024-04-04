@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Numerics;
+using System.Runtime.Intrinsics;
 
 
 namespace Scratch;
@@ -9,22 +10,31 @@ namespace Scratch;
 /// </summary>
 public static class VectorHelpers
 {
+    /// <summary>
+    /// Performs a component mask based on input flags. Essentially: "flags ? from : to" on a per-component basis
+    /// </summary>
+    /// <param name="from"></param>
+    /// <param name="other"></param>
+    /// <param name="flags"></param>
+    /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector3 Mask(in this Vector3 from, Span<bool> flags, in Vector3 other)
+    public static Vector3 Mask(in this Vector3 from, in Vector3 other, Vector128<float> flags)
     {
-        return new(
-            flags[0] ? from[0] : other[0],
-            flags[1] ? from[1] : other[1],
-            flags[2] ? from[2] : other[2]);
+        return Vector128.ConditionalSelect(flags, from.AsVector128(), other.AsVector128()).AsVector3();
     }
 
 
 
+    /// <summary>
+    /// Does a component-wise greater or less than
+    /// </summary>
+    /// <param name="left"></param>
+    /// <param name="right"></param>
+    /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<bool> LessThanOrEqual(in this Vector3 A, in Vector3 B)
+    public static Vector128<float> LessThanOrEqual(in this Vector3 left, in Vector3 right)
     {
-        bool[] flags = [A.X <= B.X, A.Y <= B.Y, A.Z <= B.Z];
-        return flags;
+        return Vector128.LessThanOrEqual(left.AsVector128(), right.AsVector128());
     }
 
 

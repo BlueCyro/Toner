@@ -10,7 +10,7 @@ namespace Scratch;
 /// <param name="sdrNits">Input SDR nits</param>
 /// <param name="targetNits">Output HDR nits</param>
 /// <param name="fast">Whether to use the 'fast' path. NOTE: Fast path is currently broken</param>
-public struct BT2556ATonemapper(float sdrNits = 100f, float targetNits = 1000f, bool fast = false) : IToneMapper
+public struct BT2446ATonemapper(float sdrNits = 100f, float targetNits = 1000f, bool fast = false) : IToneMapper
 {
     static readonly Vector3 k_bt2020 = new(0.262698338956556f, 0.678008765772817f, 0.0592928952706273f);
     const float k_bt2020_r_helper = 1.47460332208689f; // 2 - 2 * 0.262698338956556

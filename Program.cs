@@ -22,7 +22,6 @@ public class Program
     /// <returns></returns>
     public static int Main(string[] args)
     {
-        Console.WriteLine(Vector512<Vector4>.Count);
         RootCommand root = new("Takes an SDR image and applies round-trip tonemapping. (Upscales SDR to HDR with inverse tonemapping, re-tonemaps with BakingLab ACES)");
 
         Argument<string> inputFile = new(
@@ -145,7 +144,7 @@ public class Program
         var range = Enumerable.Range(0, steps);
         
         
-        IToneMapper from = new ReinhardLuminanceTonemapper(white_point);
+        IToneMapper from = new BT2446ATonemapper(100f, 1000f);
         IToneMapper to = new ACESTonemapper(quickFit);
         
 

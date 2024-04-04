@@ -68,20 +68,20 @@ public struct ACESTonemapper(bool quick = false) : IToneMapper
         if (quick)
         {
             // Apply RRT and ODT
-            color = RRTAndODTFit(col);
+            color = RRTAndODTFit(color);
         }
         else
         {
-            color = Vector3.Transform(col, ACESInputMat);
+            color = Vector3.Transform(color, ACESInputMat);
 
             // Apply RRT and ODT
-            color = RRTAndODTFit(col);
+            color = RRTAndODTFit(color);
 
-            color = Vector3.Transform(col, ACESOutputMat);
+            color = Vector3.Transform(color, ACESOutputMat);
         }
 
 		// Clamp to [0, 1]
-		color = Vector3.Clamp(col, Vector3.Zero, Vector3.One);
+		color = Vector3.Clamp(color, Vector3.Zero, Vector3.One);
 
 		return color;
 	}
