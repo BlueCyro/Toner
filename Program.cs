@@ -1,19 +1,29 @@
-﻿using Elements.Core;
-using ImageMagick;
+﻿using ImageMagick;
 using System.Collections.Concurrent;
 using System.CommandLine;
+using System.Numerics;
+using System.Runtime.Intrinsics;
 
 
 namespace Scratch;
 
+/// <summary>
+/// Main program
+/// </summary>
 public class Program
 {
-    public const string OUTPUT_DIR = "./output";
-    public const string DEFAULT_INPUT_FILE = "./input.png";
+    const string OUTPUT_DIR = "./output";
+    const string DEFAULT_INPUT_FILE = "./input.png";
 
+    /// <summary>
+    /// Main entry point for the program
+    /// </summary>
+    /// <param name="args">Optional arguments</param>
+    /// <returns></returns>
     public static int Main(string[] args)
     {
-        RootCommand root = new("Takes an SDR image and applies round-trip tonemapping. (Upscales SDR to HDR with bt.2446a, re-tonemaps with BakingLab ACES)");
+        Console.WriteLine(Vector512<Vector4>.Count);
+        RootCommand root = new("Takes an SDR image and applies round-trip tonemapping. (Upscales SDR to HDR with inverse tonemapping, re-tonemaps with BakingLab ACES)");
 
         Argument<string> inputFile = new(
             "inputFile",
@@ -94,6 +104,17 @@ public class Program
 
 
 
+    /// <summary>
+    /// Executes the main functionality of the program
+    /// </summary>
+    /// <param name="startExposure">Exposure to start approximating at</param>
+    /// <param name="stepSize">The size of the exposure steps to take</param>
+    /// <param name="steps">The amount of exposure steps to take</param>
+    /// <param name="exportEXR">Whether to export accompanying EXR files for each exposure</param>
+    /// <param name="quickFit">Whether to perform a quick fit, if available</param>
+    /// <param name="inputFile">The input image to round-trip tonemap</param>
+    /// <param name="maxConcurrency">The maximum amount of concurrency (image jobs) that can run at once, limited by CPU core count</param>
+    /// <param name="white_point">The maximum white point</param>
     public static void Execute(
         float startExposure,
         float stepSize,
@@ -117,7 +138,7 @@ public class Program
 
         var settings = new MagickReadSettings()
         {
-            ColorSpace = ColorSpace.sRGB
+            ColorSpace = ColorSpace.sRGB,
         };
 
 
@@ -136,10 +157,11 @@ public class Program
             Console.WriteLine($"Setting max parallelism to {val}");
         }
 
+        ConcurrentBag<(MagickImage image, FileStream stream)> streams = [];
 
         query.ForAll(n =>
         {
-            using var fromFile = new MagickImage(inputFile, settings);
+            var fromFile = new MagickImage(inputFile, settings);
             var pixels = fromFile.GetPixels();
             float exposure = startExposure + (n * stepSize);
 
@@ -149,24 +171,35 @@ public class Program
             Console.WriteLine($"Finished Image #{n}");
 
 
-            float roundedExp = MathX.Round(exposure, 3);
-            using FileStream newImage = File.OpenWrite($"./{OUTPUT_DIR}/#{n} (exposure {roundedExp}).png");
-            fromFile.Write(newImage);
+            float roundedExp = MathF.Round(exposure, 3);
+            // fromFile.Settings.SetDefine(MagickFormat.Png, "compression-level", 5);
+            // fromFile.Settings.SetDefine(MagickFormat.Png, "compression-strategy", 2);
+            streams.Add((fromFile, File.OpenWrite($"./{OUTPUT_DIR}/#{n} (exposure {roundedExp}).bmp")));
+            // fromFile.Write(newImage);
 
             if (exportEXR)
             {
-                using var fromEXR = new MagickImage(inputFile, settings);
+                var fromEXR = new MagickImage(inputFile, settings);
                 var exrPixels = fromEXR.GetPixels();
                 exrPixels.PerformImageTonemap(exposure, from, to, false);
 
 
                 fromEXR.Format = MagickFormat.Exr;
-                fromEXR.Settings.SetDefine(MagickFormat.Exr, "color-type", "RGB");
-                using FileStream newEXR = File.OpenWrite($"./{OUTPUT_DIR}/#{n} (exposure {roundedExp}).exr");
+                //fromEXR.Settings.SetDefine(MagickFormat.Exr, "color-type", "RGBA");
+                fromEXR.SetCompression(CompressionMethod.Zip);
+                streams.Add((fromEXR, File.OpenWrite($"./{OUTPUT_DIR}/#{n} (exposure {roundedExp}).exr")));
                 
                 
-                fromEXR.Write(newEXR);
+                // fromEXR.Write(newEXR);
             }
+        });
+
+        streams.AsParallel().ForAll(s =>
+        {
+            Console.WriteLine($"Writing image {s.stream.Name}");
+            s.image.Write(s.stream);
+            s.image.Dispose();
+            s.stream.Dispose();
         });
     }
 }

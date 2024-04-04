@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Elements.Core;
+using System.Numerics;
 using ImageMagick;
 
 
@@ -8,24 +8,39 @@ namespace Scratch;
 
 
 
+/// <summary>
+/// All things tonemapping-related
+/// </summary>
 public static class ToneMapping
 {
-    public static float3 PerformTonemap(float3 col, float exposure, bool roundTrip, IToneMapper from, IToneMapper to)
+    static readonly Vector3 sRGBHelperConstant = new(0.055f);
+    static readonly Vector3 sRGBToLinearAddend = sRGBHelperConstant / 1.055f;
+    static readonly Vector3 sRGBLowThreshold = new(0.04045f);
+    static readonly Vector3 LinearLowThreshold = new(0.0031308f);
+    const float sRGBToLinearPower = 12f / 5f;
+    const float LinearTosRGBPower = 5f / 12f;
+
+
+
+    /// <summary>
+    /// Performs a round-trip tonemap on a single RGB color
+    /// </summary>
+    /// <param name="color">The color to round-trip tonemap</param>
+    /// <param name="exposure">The exposure to tonemap at</param>
+    /// <param name="roundTrip">True if the color should be re-tonemapped at all (produces approximated HDR output)</param>
+    /// <param name="from">What tonemap to assume as the inverse</param>
+    /// <param name="to">What tonemap to use for re-mapping the values back to SDR</param>
+    /// <returns>Re-tonemapped or approximated HDR RGB color</returns>
+    public static Vector3 PerformTonemap(in Vector3 color, in float exposure, in bool roundTrip, in IToneMapper from, in IToneMapper to)
     {
-        col /= 65535f;
-        col = SrgbToLinear(col);
-        col = from.PerformInverse(col, 0f);
+        Vector3 col = from.PerformInverse(SrgbToLinear(color / 65535f), 1f);
+
 
         if (roundTrip)
-        {
-            col = to.PerformTonemap(col, exposure);
-            col = MathX.Clamp(col, 0f, 1f);
-            col = LinearToSrgb(col);
-        }
+            col = LinearToSrgb(Vector3.Clamp(to.PerformTonemap(col, exposure), Vector3.Zero, Vector3.One));
         else
-        {
-            col *= MathX.Exp(exposure);
-        }
+            col *= (float)Math.Exp(exposure);
+
 
         col *= 65535f;
 
@@ -33,68 +48,109 @@ public static class ToneMapping
     }
 
 
+
+    /// <summary>
+    /// Performs an image-wide tonemap
+    /// </summary>
+    /// <param name="pixels">Collection of pixels to tonemap</param>
+    /// <param name="exposure">Exposure to tonemap at</param>
+    /// <param name="from">What tonemap to assume as the inverse</param>
+    /// <param name="to">What tonemap to use for re-mapping the values back to SDR</param>
+    /// <param name="roundTrip">True if the the pixels should be re-tonemapped at all (produces approximated HDR output)</param>
+    /// <param name="alpha">True if the input contains alpha</param>
     public static void PerformImageTonemap(this IPixelCollection<float> pixels, float exposure, IToneMapper from, IToneMapper to, bool roundTrip = true, bool alpha = false)
     {
         float[]? values = pixels.GetValues();
         Span<float> newValues = values.AsSpan();
-        if (alpha)
+        if (alpha) // Vector4 if alpha
         {
-            Span<float4> colors = MemoryMarshal.Cast<float, float4>(newValues); // Interpret the values as a float3 span - GO VERY FAST
+            Span<Vector4> colors = MemoryMarshal.Cast<float, Vector4>(newValues); // Interpret the values as a Vector3 span - GO VERY FAST
+
+
             for (int i = 0; i < colors.Length; i++)
             {
-                colors[i] = new(PerformTonemap(colors[i].xyz, exposure, roundTrip, from, to), colors[i].W); // Tonemap that guy
+                colors[i] = new Vector4(
+                    PerformTonemap(new Vector3(colors[i].X, colors[i].Y, colors[i].Z), exposure, roundTrip, from, to),
+                    colors[i].W); // Tonemap that guy
             }
-            newValues = MemoryMarshal.Cast<float4, float>(colors); // Disguise it as my own cooking (interpret back to floats)
+
+
+            newValues = MemoryMarshal.Cast<Vector4, float>(colors); // Disguise it as my own cooking (interpret back to floats)
         }
-        else
+        else // The same, but with just Vector3
         {
-            Span<float3> colors = MemoryMarshal.Cast<float, float3>(values.AsSpan());
+            Span<Vector3> colors = MemoryMarshal.Cast<float, Vector3>(values.AsSpan());
+
+
             for (int i = 0; i < colors.Length; i++)
             {
                 colors[i] = PerformTonemap(colors[i], exposure, roundTrip, from, to);
             }
-            newValues = MemoryMarshal.Cast<float3, float>(colors);
+
+
+            newValues = MemoryMarshal.Cast<Vector3, float>(colors);
         }
         pixels.SetPixels(newValues); // Write the new pixels to the 
     }
 
 
-    
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static float3 SrgbToLinear(in float3 color)
-    {
-        bool3 isLo = color <= 0.04045f;
 
-        float3 loPart = color / 12.92f;
-        float3 hiPart = MathX.Pow((color + 0.055f) / 1.055f, 12.0f / 5.0f);
+    /// <summary>
+    /// Converts sRGB values into linear RGB values
+    /// </summary>
+    /// <param name="color">sRGB values</param>
+    /// <returns>Linear RGB values</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector3 SrgbToLinear(in Vector3 color)
+    {
+        Span<bool> isLo = color.LessThanOrEqual(sRGBLowThreshold);
+
+        Vector3 loPart = color / 12.92f;
+        Vector3 hiPart = (color + sRGBToLinearAddend).Pow(sRGBToLinearPower);
         return loPart.Mask(isLo, hiPart);
     }
 
 
 
+    /// <summary>
+    /// Converts linear RGB values into sRGB values
+    /// </summary>
+    /// <param name="color">Linear RGB values</param>
+    /// <returns>sRGB values</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static float3 LinearToSrgb(in float3 color)
+    public static Vector3 LinearToSrgb(in Vector3 color)
     {
-        bool3 isLo = color <= 0.0031308f;
+        Span<bool> isLo = color.LessThanOrEqual(LinearLowThreshold);
 
-        float3 loPart = color * 12.92f;
-        float3 hiPart = MathX.Pow(color, 5.0f / 12.0f) * 1.055f - 0.055f;
+        Vector3 loPart = color * 12.92f;
+        Vector3 hiPart = color.Pow(LinearTosRGBPower) * 1.055f - sRGBHelperConstant;
         return loPart.Mask(isLo, hiPart);
     }
 
 
 
+    /// <summary>
+    /// Changes the luminance of RGB values
+    /// </summary>
+    /// <param name="color">RGB values to change the luminance of</param>
+    /// <param name="newLum">What the luminance should be changed to</param>
+    /// <returns>Luminance-adjusted RGB values</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static float3 ChangeLuminance(this float3 color, float outLum)
+    public static Vector3 ChangeLuminance(in this Vector3 color, in float newLum)
     {
-        return color * (outLum / color.Luminance());
+        return color * (newLum / color.Luminance());
     }
 
 
 
+    /// <summary>
+    /// Gets the perceived luminance of an RGB color
+    /// </summary>
+    /// <param name="color">The RGB values to get the luminance of</param>
+    /// <returns>The perceived luminance of the input</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static float Luminance(this float3 color)
+    public static float Luminance(in this Vector3 color)
     {
-        return MathX.Dot(color, new(0.2126f, 0.7152f, 0.0722f));
+        return Vector3.Dot(color, new(0.2126f, 0.7152f, 0.0722f));
     }
 }

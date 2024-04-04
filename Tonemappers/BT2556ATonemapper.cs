@@ -1,15 +1,22 @@
-using Elements.Core;
+using System.Numerics;
 
 
 namespace Scratch;
 
+/// <summary>
+/// <para>Performs tonemapping via standard defined in Report ITU-R BT.2446-1: Page 12 of <see href="https://www.itu.int/dms_pub/itu-r/opb/rep/R-REP-BT.2446-1-2021-PDF-E.pdf"/></para>
+/// <para>Keeps color relationships intact, more suitable for preserving the look of SDR content on HDR displays, re-tonemapping is lackluster</para>
+/// </summary>
+/// <param name="sdrNits">Input SDR nits</param>
+/// <param name="targetNits">Output HDR nits</param>
+/// <param name="fast">Whether to use the 'fast' path. NOTE: Fast path is currently broken</param>
 public struct BT2556ATonemapper(float sdrNits = 100f, float targetNits = 1000f, bool fast = false) : IToneMapper
 {
-    static readonly float3 k_bt2020 = new(0.262698338956556f, 0.678008765772817f, 0.0592928952706273f);
-    public const float k_bt2020_r_helper = 1.47460332208689f; // 2 - 2 * 0.262698338956556
-    public const float k_bt2020_b_helper = 1.88141420945875f; // 2 - 2 * 0.0592928952706273
-    public const float inverse_gamma = 2.4f;
-    public const float gamma = 1f / inverse_gamma;
+    static readonly Vector3 k_bt2020 = new(0.262698338956556f, 0.678008765772817f, 0.0592928952706273f);
+    const float k_bt2020_r_helper = 1.47460332208689f; // 2 - 2 * 0.262698338956556
+    const float k_bt2020_b_helper = 1.88141420945875f; // 2 - 2 * 0.0592928952706273
+    const float inverse_gamma = 2.4f;
+    const float gamma = 1f / inverse_gamma;
     const float a1 = 1.8712e-5f;
     const float b1 = -2.7334e-3f;
     const float c1 = 1.3141f;
@@ -18,23 +25,36 @@ public struct BT2556ATonemapper(float sdrNits = 100f, float targetNits = 1000f, 
     const float c2 = 1.2328f;
 
 
-    public float3 PerformTonemap(float3 col, float exposure) => throw new NotImplementedException("Not implemented yet!!");
+    /// <summary>
+    /// Performs inverse tonemap assuming BT.2446 standard NOTE: NOT implemented
+    /// </summary>
+    /// <param name="col"></param>
+    /// <param name="exposure"></param>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
+    public Vector3 PerformTonemap(in Vector3 col, in float exposure) => throw new NotImplementedException("Not implemented yet!!");
 
 
     // Credit goes to EndlesslyFlowering on github for this function
     // Rep. ITU-R BT.2446-1 Table 2-4 (inversed)
     // BT.2446 Method A inverse tone mapping (itm)
-    public float3 PerformInverse(
-        float3 col,
-        float exposure)
+    /// <summary>
+    /// Performs inverse tonmapping assuming BT.2446
+    /// </summary>
+    /// <param name="color"></param>
+    /// <param name="exposure"></param>
+    /// <returns></returns>
+    public Vector3 PerformInverse(
+        in Vector3 color,
+        in float exposure)
     {   
         // RGB->R'G'B' gamma compression
-        col = MathX.Pow(col, gamma);
+        Vector3 col = color.Pow(gamma);
 
 
         // Rec. ITU-R BT.2020-2 Table 4
         // Y'tmo
-        float yTmo = MathX.Dot(col, k_bt2020);
+        float yTmo = Vector3.Dot(col, k_bt2020);
         // C'b,tmo
         float cBTmo = (col.Z - yTmo) / k_bt2020_b_helper;
         // C'r,tmo
@@ -51,12 +71,14 @@ public struct BT2556ATonemapper(float sdrNits = 100f, float targetNits = 1000f, 
 
             float yy_ = 255.0f * yTmo;
             float t = 70.0f;
+            float yy_Pow = MathF.Pow(yy_, 2f);
+
 
             float e = yy_ <= t ?
-                a1 * MathX.Pow(yy_, 2.0f) + b1 * yy_ + c1 :
-                a2 * MathX.Pow(yy_, 2.0f) + b2 * yy_ + c2;
+                a1 * yy_Pow + b1 * yy_ + c1 :
+                a2 * yy_Pow + b2 * yy_ + c2;
 
-            float yHdr = MathX.Pow(yy_, e);
+            float yHdr = MathF.Pow(yy_, e);
 
             float sC = yTmo > 0.0f ?
                 1.075f * (yHdr / yTmo) :
@@ -66,9 +88,9 @@ public struct BT2556ATonemapper(float sdrNits = 100f, float targetNits = 1000f, 
             float cRHdr = cRTmo * sC;
 
             col = new(
-                MathX.Clamp(yHdr + k_bt2020_r_helper * cRHdr, 0.0f, 1000.0f),
-                MathX.Clamp(yHdr - 0.16455312684366f * cBHdr - 0.57135312684366f * cRHdr, 0.0f, 1000.0f),
-                MathX.Clamp(yHdr + k_bt2020_b_helper * cBHdr, 0.0f, 1000.0f));
+                Math.Clamp(yHdr + k_bt2020_r_helper * cRHdr, 0.0f, 1000.0f),
+                Math.Clamp(yHdr - 0.16455312684366f * cBHdr - 0.57135312684366f * cRHdr, 0.0f, 1000.0f),
+                Math.Clamp(yHdr + k_bt2020_b_helper * cBHdr, 0.0f, 1000.0f));
 
             col /= 1000f;
         }
@@ -81,8 +103,8 @@ public struct BT2556ATonemapper(float sdrNits = 100f, float targetNits = 1000f, 
 
             // Tone mapping step 3 (inverse)
             // get Y'c
-            float pSdr = 1 + 32 * MathX.Pow(sdrNits / 10000.0f, gamma);
-            float yC = MathX.Log((ySdr * (pSdr - 1f)) + 1f) / MathX.Log(pSdr); // log = ln
+            float pSdr = 1 + 32 * MathF.Pow(sdrNits / 10000.0f, gamma);
+            float yC = MathF.Log((ySdr * (pSdr - 1f)) + 1f) / MathF.Log(pSdr); // log = ln
 
             // Tone mapping step 2 (inverse)
             // get Y'p
@@ -90,7 +112,7 @@ public struct BT2556ATonemapper(float sdrNits = 100f, float targetNits = 1000f, 
             float yP0 = yC / 1.0770f;
             float yP2 = (yC - 0.5000f) / 0.5000f;
             float first = -2.7811f;
-            float sqrt = MathX.Sqrt(4.83307641f - 4.604f * yC);
+            float sqrt = MathF.Sqrt(4.83307641f - 4.604f * yC);
             float div = -2.302f;
             float yP1 = (first + sqrt) / div;
 
@@ -120,8 +142,8 @@ public struct BT2556ATonemapper(float sdrNits = 100f, float targetNits = 1000f, 
 
             // Tone mapping step 1 (inverse)
             // get Y'
-            float pHdr = 1f + 32f * MathX.Pow(targetNits / 10000f, gamma);
-            float y_ = MathX.Pow(pHdr, yP) - 1f / (pHdr - 1);
+            float pHdr = 1f + 32f * MathF.Pow(targetNits / 10000f, gamma);
+            float y_ = MathF.Pow(pHdr, yP) - 1f / (pHdr - 1);
 
 
             // Colour scaling function
@@ -132,13 +154,14 @@ public struct BT2556ATonemapper(float sdrNits = 100f, float targetNits = 1000f, 
             // Colour difference signals (inverse) and Luma (inverse)
             // get R'G'B'
             // clamp for safety
-            col.SetZ(MathX.Clamp(cBTmo * k_bt2020_b_helper / colScale + y_, 0f, 1f));
-            col.SetX(MathX.Clamp(cRTmo * k_bt2020_r_helper / colScale + y_, 0f, 1f));
-            col.SetY(MathX.Clamp((y_ - (k_bt2020.X * col.X + k_bt2020.Z * col.Z)) / k_bt2020.Y, 0f, 1f));
+            col = new(
+                Math.Clamp(cBTmo * k_bt2020_b_helper / colScale + y_, 0f, 1f),
+                Math.Clamp(cRTmo * k_bt2020_r_helper / colScale + y_, 0f, 1f),
+                Math.Clamp((y_ - (k_bt2020.X * col.X + k_bt2020.Z * col.Z)) / k_bt2020.Y, 0f, 1f));
         }
 
         // R'G'B' gamma expansion
-        col = MathX.Pow(col, inverse_gamma);
+        col = col.Pow(inverse_gamma);
 
         // map target luminance into 10000 nits
         col *= targetNits;

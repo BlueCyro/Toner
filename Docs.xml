@@ -1,0 +1,239 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Inverse tonemapper</name>
+    </assembly>
+    <members>
+        <member name="T:Scratch.Program">
+            <summary>
+            Main program
+            </summary>
+        </member>
+        <member name="M:Scratch.Program.Main(System.String[])">
+            <summary>
+            Main entry point for the program
+            </summary>
+            <param name="args">Optional arguments</param>
+            <returns></returns>
+        </member>
+        <member name="M:Scratch.Program.Execute(System.Single,System.Single,System.Int32,System.Boolean,System.Boolean,System.String,System.Nullable{System.Int32},System.Single)">
+            <summary>
+            Executes the main functionality of the program
+            </summary>
+            <param name="startExposure">Exposure to start approximating at</param>
+            <param name="stepSize">The size of the exposure steps to take</param>
+            <param name="steps">The amount of exposure steps to take</param>
+            <param name="exportEXR">Whether to export accompanying EXR files for each exposure</param>
+            <param name="quickFit">Whether to perform a quick fit, if available</param>
+            <param name="inputFile">The input image to round-trip tonemap</param>
+            <param name="maxConcurrency">The maximum amount of concurrency (image jobs) that can run at once, limited by CPU core count</param>
+            <param name="white_point">The maximum white point</param>
+        </member>
+        <member name="T:Scratch.ACESTonemapper">
+            <summary>
+            Performs BakingLab ACES tonemapping: <see href="https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl"/>
+            </summary>
+            <param name="quick">If true, skips the matrix multiplication when <see cref="M:Scratch.ACESTonemapper.PerformTonemap(System.Numerics.Vector3@,System.Single@)"/> is called. Saturates brighter colors.</param>
+        </member>
+        <member name="M:Scratch.ACESTonemapper.#ctor(System.Boolean)">
+            <summary>
+            Performs BakingLab ACES tonemapping: <see href="https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl"/>
+            </summary>
+            <param name="quick">If true, skips the matrix multiplication when <see cref="M:Scratch.ACESTonemapper.PerformTonemap(System.Numerics.Vector3@,System.Single@)"/> is called. Saturates brighter colors.</param>
+        </member>
+        <member name="F:Scratch.ACESTonemapper.ACESInputMat">
+            <summary>
+            Input color matrix for fitting
+            </summary>
+        </member>
+        <member name="F:Scratch.ACESTonemapper.ACESOutputMat">
+            <summary>
+            Output color matrix for fitting
+            </summary>
+        </member>
+        <member name="M:Scratch.ACESTonemapper.RRTAndODTFit(System.Numerics.Vector3@)">
+            <summary>
+            Fits an HDR input color to the ACES curve
+            </summary>
+            <param name="v">HDR RGB values to be fitted</param>
+            <returns>Fitted SDR RGB values</returns>
+        </member>
+        <member name="M:Scratch.ACESTonemapper.PerformTonemap(System.Numerics.Vector3@,System.Single@)">
+            <summary>
+            Tonemaps an HDR color into SDR using an ACES tonemap
+            </summary>
+            <param name="col">HDR RGB values to be tonemapped</param>
+            <param name="exposure">Exposure to tonemap at</param>
+            <returns>Tonemapped SDR RGB values</returns>
+        </member>
+        <member name="M:Scratch.ACESTonemapper.PerformInverse(System.Numerics.Vector3@,System.Single@)">
+            <summary>
+            Inversely maps SDR RGB values into HDR RGB values assuming ACES
+            </summary>
+            <param name="color">SDR RGB values to be up-mapped</param>
+            <param name="exposure">Exposure to up-map at</param>
+            <returns>Approximated HDR RGB values</returns>
+        </member>
+        <member name="T:Scratch.BT2556ATonemapper">
+            <summary>
+            <para>Performs tonemapping via standard defined in Report ITU-R BT.2446-1: Page 12 of <see href="https://www.itu.int/dms_pub/itu-r/opb/rep/R-REP-BT.2446-1-2021-PDF-E.pdf"/></para>
+            <para>Keeps color relationships intact, more suitable for preserving the look of SDR content on HDR displays, re-tonemapping is lackluster</para>
+            </summary>
+            <param name="sdrNits">Input SDR nits</param>
+            <param name="targetNits">Output HDR nits</param>
+            <param name="fast">Whether to use the 'fast' path. NOTE: Fast path is currently broken</param>
+        </member>
+        <member name="M:Scratch.BT2556ATonemapper.#ctor(System.Single,System.Single,System.Boolean)">
+            <summary>
+            <para>Performs tonemapping via standard defined in Report ITU-R BT.2446-1: Page 12 of <see href="https://www.itu.int/dms_pub/itu-r/opb/rep/R-REP-BT.2446-1-2021-PDF-E.pdf"/></para>
+            <para>Keeps color relationships intact, more suitable for preserving the look of SDR content on HDR displays, re-tonemapping is lackluster</para>
+            </summary>
+            <param name="sdrNits">Input SDR nits</param>
+            <param name="targetNits">Output HDR nits</param>
+            <param name="fast">Whether to use the 'fast' path. NOTE: Fast path is currently broken</param>
+        </member>
+        <member name="M:Scratch.BT2556ATonemapper.PerformTonemap(System.Numerics.Vector3@,System.Single@)">
+            <summary>
+            Performs inverse tonemap assuming BT.2446 standard NOTE: NOT implemented
+            </summary>
+            <param name="col"></param>
+            <param name="exposure"></param>
+            <returns></returns>
+            <exception cref="T:System.NotImplementedException"></exception>
+        </member>
+        <member name="M:Scratch.BT2556ATonemapper.PerformInverse(System.Numerics.Vector3@,System.Single@)">
+            <summary>
+            Performs inverse tonmapping assuming BT.2446
+            </summary>
+            <param name="color"></param>
+            <param name="exposure"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Scratch.IToneMapper">
+            <summary>
+            Interface for a tonemapper.
+            </summary>
+        </member>
+        <member name="M:Scratch.IToneMapper.PerformTonemap(System.Numerics.Vector3@,System.Single@)">
+            <summary>
+            Tonemaps HDR RGB values into SDR RGB values
+            </summary>
+            <param name="col">HDR RGB values</param>
+            <param name="exposure">Exposure to tonemap at</param>
+            <returns>SDR RGB values</returns>
+        </member>
+        <member name="M:Scratch.IToneMapper.PerformInverse(System.Numerics.Vector3@,System.Single@)">
+            <summary>
+            Inversely tonemaps SDR RGB values into HDR RGB values
+            </summary>
+            <param name="col">SDR RGB values</param>
+            <param name="exposure">Exposure to inversely tonemap at</param>
+            <returns>HDR RGB Values</returns>
+        </member>
+        <member name="T:Scratch.ReinhardLuminanceTonemapper">
+            <summary>
+            Performs tonemapping via Reinhard acting on luminance only, allows defining a white point
+            </summary>
+            <param name="max_white">The maximum white point of the input or output color to tonemap against</param>
+        </member>
+        <member name="M:Scratch.ReinhardLuminanceTonemapper.#ctor(System.Single)">
+            <summary>
+            Performs tonemapping via Reinhard acting on luminance only, allows defining a white point
+            </summary>
+            <param name="max_white">The maximum white point of the input or output color to tonemap against</param>
+        </member>
+        <member name="M:Scratch.ReinhardLuminanceTonemapper.PerformTonemap(System.Numerics.Vector3@,System.Single@)">
+            <summary>
+            Tonemaps HDR RGB values into SDR RGB values via Reinhard
+            </summary>
+            <param name="color">HDR RGB values</param>
+            <param name="exposure">Exposure to tonemap at</param>
+            <returns>SDR RGB values</returns>
+        </member>
+        <member name="M:Scratch.ReinhardLuminanceTonemapper.PerformInverse(System.Numerics.Vector3@,System.Single@)">
+            <summary>
+            Inversely tonemaps SDR RGB values into HDR RGB values assuming luminance-only Reinhard
+            </summary>
+            <param name="color">SDR RGB values</param>
+            <param name="exposure">Exposure to inversely tonemap at</param>
+            <returns>Approximated HDR RGB values</returns>
+        </member>
+        <member name="T:Scratch.ReinhardTonemapper">
+            <summary>
+            Performs tonemapping via Reinhard's method
+            </summary>
+        </member>
+        <member name="M:Scratch.ReinhardTonemapper.PerformTonemap(System.Numerics.Vector3@,System.Single@)">
+            <summary>
+            Tonemaps HDR RGB values into SDR
+            </summary>
+            <param name="color">HDR RGB values</param>
+            <param name="exposure">Exposure to perform tonemapping at</param>
+            <returns>SDR RGB values</returns>
+        </member>
+        <member name="M:Scratch.ReinhardTonemapper.PerformInverse(System.Numerics.Vector3@,System.Single@)">
+            <summary>
+            Inversely maps SDR RGB values into HDR assuming Reinhard
+            </summary>
+            <param name="color">SDR RGB values</param>
+            <param name="exposure">Exposure to perform inverse tonemapping at</param>
+            <returns>Approximated HDR RGB values</returns>
+        </member>
+        <member name="T:Scratch.ToneMapping">
+            <summary>
+            All things tonemapping-related
+            </summary>
+        </member>
+        <member name="M:Scratch.ToneMapping.PerformTonemap(System.Numerics.Vector3@,System.Single@,System.Boolean@,Scratch.IToneMapper@,Scratch.IToneMapper@)">
+            <summary>
+            Performs a round-trip tonemap on a single RGB color
+            </summary>
+            <param name="color">The color to round-trip tonemap</param>
+            <param name="exposure">The exposure to tonemap at</param>
+            <param name="roundTrip">True if the color should be re-tonemapped at all (produces approximated HDR output)</param>
+            <param name="from">What tonemap to assume as the inverse</param>
+            <param name="to">What tonemap to use for re-mapping the values back to SDR</param>
+            <returns>Re-tonemapped or approximated HDR RGB color</returns>
+        </member>
+        <member name="M:Scratch.ToneMapping.PerformImageTonemap(ImageMagick.IPixelCollection{System.Single},System.Single,Scratch.IToneMapper,Scratch.IToneMapper,System.Boolean,System.Boolean)">
+            <summary>
+            Performs an image-wide tonemap
+            </summary>
+            <param name="pixels">Collection of pixels to tonemap</param>
+            <param name="exposure">Exposure to tonemap at</param>
+            <param name="from">What tonemap to assume as the inverse</param>
+            <param name="to">What tonemap to use for re-mapping the values back to SDR</param>
+            <param name="roundTrip">True if the the pixels should be re-tonemapped at all (produces approximated HDR output)</param>
+            <param name="alpha">True if the input contains alpha</param>
+        </member>
+        <member name="M:Scratch.ToneMapping.SrgbToLinear(System.Numerics.Vector3@)">
+            <summary>
+            Converts sRGB values into linear RGB values
+            </summary>
+            <param name="color">sRGB values</param>
+            <returns>Linear RGB values</returns>
+        </member>
+        <member name="M:Scratch.ToneMapping.LinearToSrgb(System.Numerics.Vector3@)">
+            <summary>
+            Converts linear RGB values into sRGB values
+            </summary>
+            <param name="color">Linear RGB values</param>
+            <returns>sRGB values</returns>
+        </member>
+        <member name="M:Scratch.ToneMapping.ChangeLuminance(System.Numerics.Vector3@,System.Single@)">
+            <summary>
+            Changes the luminance of RGB values
+            </summary>
+            <param name="color">RGB values to change the luminance of</param>
+            <param name="newLum">What the luminance should be changed to</param>
+            <returns>Luminance-adjusted RGB values</returns>
+        </member>
+        <member name="M:Scratch.ToneMapping.Luminance(System.Numerics.Vector3@)">
+            <summary>
+            Gets the perceived luminance of an RGB color
+            </summary>
+            <param name="color">The RGB values to get the luminance of</param>
+            <returns>The perceived luminance of the input</returns>
+        </member>
+    </members>
+</doc>

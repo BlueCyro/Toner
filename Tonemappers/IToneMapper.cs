@@ -1,10 +1,27 @@
-using Elements.Core;
-
+using System.Numerics;
 
 namespace Scratch;
 
+/// <summary>
+/// Interface for a tonemapper.
+/// </summary>
 public interface IToneMapper
 {
-    public float3 PerformTonemap(float3 col, float exposure);
-    public float3 PerformInverse(float3 col, float exposure);
+    /// <summary>
+    /// Tonemaps HDR RGB values into SDR RGB values
+    /// </summary>
+    /// <param name="col">HDR RGB values</param>
+    /// <param name="exposure">Exposure to tonemap at</param>
+    /// <returns>SDR RGB values</returns>
+    public Vector3 PerformTonemap(in Vector3 col, in float exposure);
+
+
+
+    /// <summary>
+    /// Inversely tonemaps SDR RGB values into HDR RGB values
+    /// </summary>
+    /// <param name="col">SDR RGB values</param>
+    /// <param name="exposure">Exposure to inversely tonemap at</param>
+    /// <returns>HDR RGB Values</returns>
+    public Vector3 PerformInverse(in Vector3 col, in float exposure);
 }
