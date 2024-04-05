@@ -47,7 +47,7 @@ public static class ToneMapping
     {
         for (int i = 0; i < pixels.Length; i++)
         {
-            pixels[i] = new Vector4(toneMapper.PerformTonemap(LinearToSrgb(pixels[i].AsVector3()), exposure), pixels[i][3]).AsVector128(); // Tonemap that guy
+            pixels[i] = new Vector4(LinearToSrgb(toneMapper.PerformTonemap(pixels[i].AsVector3(), exposure)), pixels[i][3]).AsVector128(); // Tonemap that guy
         }
     }
 
