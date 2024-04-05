@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <doc>
     <assembly>
-        <name>Inverse tonemapper</name>
+        <name>Toner</name>
     </assembly>
     <members>
         <member name="T:Scratch.Program">
@@ -16,14 +16,13 @@
             <param name="args">Optional arguments</param>
             <returns></returns>
         </member>
-        <member name="M:Scratch.Program.Execute(System.Single,System.Single,System.Int32,System.Boolean,System.Boolean,System.String,System.Nullable{System.Int32},System.Single)">
+        <member name="M:Scratch.Program.Execute(System.Single,System.Single,System.Int32,System.Boolean,System.String,System.Nullable{System.Int32},System.Single)">
             <summary>
             Executes the main functionality of the program
             </summary>
             <param name="startExposure">Exposure to start approximating at</param>
             <param name="stepSize">The size of the exposure steps to take</param>
             <param name="steps">The amount of exposure steps to take</param>
-            <param name="exportHDR">Whether to export accompanying EXR files for each exposure</param>
             <param name="quickFit">Whether to perform a quick fit, if available</param>
             <param name="inputFile">The input image to round-trip tonemap</param>
             <param name="maxConcurrency">The maximum amount of concurrency (image jobs) that can run at once, limited by CPU core count</param>
@@ -81,25 +80,20 @@
             </summary>
             <param name="sdrNits">Input SDR nits</param>
             <param name="targetNits">Output HDR nits</param>
-            <param name="fast">Whether to use the 'fast' path. NOTE: Fast path is currently broken</param>
         </member>
-        <member name="M:Scratch.BT2446ATonemapper.#ctor(System.Single,System.Single,System.Boolean)">
+        <member name="M:Scratch.BT2446ATonemapper.#ctor(System.Single,System.Single)">
             <summary>
             <para>Performs tonemapping via standard defined in Report ITU-R BT.2446-1: Page 12 of <see href="https://www.itu.int/dms_pub/itu-r/opb/rep/R-REP-BT.2446-1-2021-PDF-E.pdf"/></para>
             <para>Keeps color relationships intact, more suitable for preserving the look of SDR content on HDR displays, re-tonemapping is lackluster</para>
             </summary>
             <param name="sdrNits">Input SDR nits</param>
             <param name="targetNits">Output HDR nits</param>
-            <param name="fast">Whether to use the 'fast' path. NOTE: Fast path is currently broken</param>
         </member>
         <member name="M:Scratch.BT2446ATonemapper.PerformTonemap(System.Numerics.Vector3@,System.Single@)">
             <summary>
-            Performs inverse tonemap assuming BT.2446 standard NOTE: NOT implemented
+            NOTE: Not implemented.
             </summary>
-            <param name="col"></param>
-            <param name="exposure"></param>
-            <returns></returns>
-            <exception cref="T:System.NotImplementedException"></exception>
+            <inheritdoc/>
         </member>
         <member name="M:Scratch.BT2446ATonemapper.PerformInverse(System.Numerics.Vector3@,System.Single@)">
             <summary>
@@ -116,7 +110,7 @@
         </member>
         <member name="M:Scratch.IToneMapper.PerformTonemap(System.Numerics.Vector3@,System.Single@)">
             <summary>
-            Tonemaps HDR RGB values into SDR RGB values
+            Tonemaps HDR RGB values into SDR
             </summary>
             <param name="col">HDR RGB values</param>
             <param name="exposure">Exposure to tonemap at</param>
@@ -124,7 +118,7 @@
         </member>
         <member name="M:Scratch.IToneMapper.PerformInverse(System.Numerics.Vector3@,System.Single@)">
             <summary>
-            Inversely tonemaps SDR RGB values into HDR RGB values
+            Extrapolates SDR RGB values into HDR
             </summary>
             <param name="col">SDR RGB values</param>
             <param name="exposure">Exposure to inversely tonemap at</param>
@@ -132,31 +126,21 @@
         </member>
         <member name="T:Scratch.ReinhardLuminanceTonemapper">
             <summary>
-            Performs tonemapping via Reinhard acting on luminance only, allows defining a white point
+            Performs tonemapping via Reinhard's method acting on luminance only, allows defining a white point
             </summary>
             <param name="max_white">The maximum white point of the input or output color to tonemap against</param>
         </member>
         <member name="M:Scratch.ReinhardLuminanceTonemapper.#ctor(System.Single)">
             <summary>
-            Performs tonemapping via Reinhard acting on luminance only, allows defining a white point
+            Performs tonemapping via Reinhard's method acting on luminance only, allows defining a white point
             </summary>
             <param name="max_white">The maximum white point of the input or output color to tonemap against</param>
         </member>
         <member name="M:Scratch.ReinhardLuminanceTonemapper.PerformTonemap(System.Numerics.Vector3@,System.Single@)">
-            <summary>
-            Tonemaps HDR RGB values into SDR RGB values via Reinhard
-            </summary>
-            <param name="color">HDR RGB values</param>
-            <param name="exposure">Exposure to tonemap at</param>
-            <returns>SDR RGB values</returns>
+            <inheritdoc/>
         </member>
         <member name="M:Scratch.ReinhardLuminanceTonemapper.PerformInverse(System.Numerics.Vector3@,System.Single@)">
-            <summary>
-            Inversely tonemaps SDR RGB values into HDR RGB values assuming luminance-only Reinhard
-            </summary>
-            <param name="color">SDR RGB values</param>
-            <param name="exposure">Exposure to inversely tonemap at</param>
-            <returns>Approximated HDR RGB values</returns>
+            <inheritdoc/>
         </member>
         <member name="T:Scratch.ReinhardTonemapper">
             <summary>
@@ -164,20 +148,10 @@
             </summary>
         </member>
         <member name="M:Scratch.ReinhardTonemapper.PerformTonemap(System.Numerics.Vector3@,System.Single@)">
-            <summary>
-            Tonemaps HDR RGB values into SDR
-            </summary>
-            <param name="color">HDR RGB values</param>
-            <param name="exposure">Exposure to perform tonemapping at</param>
-            <returns>SDR RGB values</returns>
+            <inheritdoc/>
         </member>
         <member name="M:Scratch.ReinhardTonemapper.PerformInverse(System.Numerics.Vector3@,System.Single@)">
-            <summary>
-            Inversely maps SDR RGB values into HDR assuming Reinhard
-            </summary>
-            <param name="color">SDR RGB values</param>
-            <param name="exposure">Exposure to perform inverse tonemapping at</param>
-            <returns>Approximated HDR RGB values</returns>
+            <inheritdoc/>
         </member>
         <member name="T:Scratch.ToneMapping">
             <summary>
@@ -188,9 +162,17 @@
             <summary>
             Performs an image-wide inverse tonemap
             </summary>
+            <param name="pixels">Span of pixels to tonemap</param>
+            <param name="exposure">Exposure to inversely tonemap at. NOTE: Currently non-functional</param>
+            <param name="toneMapper">The tonemap to assume as the inverse</param>
+        </member>
+        <member name="M:Scratch.ToneMapping.PerformImageTonemap(System.Span{System.Runtime.Intrinsics.Vector128{System.Single}}@,System.Single@,Scratch.IToneMapper@)">
+            <summary>
+            Performs an image-wide tonemap
+            </summary>
             <param name="pixels">Collection of pixels to tonemap</param>
             <param name="exposure">Exposure to tonemap at</param>
-            <param name="toneMapper">What tonemap to assume as the inverse</param>
+            <param name="toneMapper">The tonemap to use</param>
         </member>
         <member name="M:Scratch.ToneMapping.SrgbToLinear(System.Numerics.Vector3@)">
             <summary>

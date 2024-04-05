@@ -35,7 +35,7 @@ public class Program
 
         Option<float> startExposure = new(
             "--startExposure",
-            () => -6f,
+            () => 0f,
             "The exposure level to start at");
         
         startExposure.AddAlias("-e");
@@ -84,7 +84,7 @@ public class Program
         Option<float> whitePoint = new(
             "--whitePoint",
             () => 1f,
-            "Defines the \"maximum\" white point of the image - values higher than one will make highlights more saturated");
+            "Defines the \"maximum\" white point of the input image - values higher than one will make highlights more saturated");
 
         whitePoint.AddAlias("-w");
 
