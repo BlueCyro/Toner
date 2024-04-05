@@ -9,6 +9,13 @@
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
     <DocumentationFile>./Docs.xml</DocumentationFile>
+
+    <Version>1.0.0</Version>
+    <AssemblyVersion>$(Version)</AssemblyVersion>
+    <Authors>Cyro</Authors>
+    <Product>Toner SDR to HDR extrapolator</Product>
+    <Description>Extrapolates multiple HDR 'exposures' from a single SDR image</Description>
+    <Copyright>Copyright (c) 2024 Riley Fields</Copyright>
   </PropertyGroup>
 
 
@@ -19,11 +26,15 @@
     <PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
   </ItemGroup>
 
+  <Target Name="ZipRelease" AfterTargets="Publish">
+    <ZipDirectory SourceDirectory="$(PublishDir)" DestinationFile="./Toner.zip" Overwrite="true" />
+  </Target>
 
   <Target Name="DeepClean" AfterTargets="Clean">
     <RemoveDir Directories="./bin" />
     <RemoveDir Directories="./obj" />
-
+    
+    <Delete Files="./Toner.zip" />
     <Exec Command="dotnet restore" />
   </Target>
 </Project>
