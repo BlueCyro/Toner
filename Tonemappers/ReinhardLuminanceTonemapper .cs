@@ -5,17 +5,12 @@ using System.Numerics;
 namespace Scratch;
 
 /// <summary>
-/// Performs tonemapping via Reinhard acting on luminance only, allows defining a white point
+/// Performs tonemapping via Reinhard's method acting on luminance only, allows defining a white point
 /// </summary>
 /// <param name="max_white">The maximum white point of the input or output color to tonemap against</param>
 public struct ReinhardLuminanceTonemapper(float max_white = 1f) : IToneMapper
 {
-    /// <summary>
-    /// Tonemaps HDR RGB values into SDR RGB values via Reinhard
-    /// </summary>
-    /// <param name="color">HDR RGB values</param>
-    /// <param name="exposure">Exposure to tonemap at</param>
-    /// <returns>SDR RGB values</returns>
+    /// <inheritdoc/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly Vector3 PerformTonemap(in Vector3 color, in float exposure)
     {
@@ -29,12 +24,7 @@ public struct ReinhardLuminanceTonemapper(float max_white = 1f) : IToneMapper
 
 
 
-    /// <summary>
-    /// Inversely tonemaps SDR RGB values into HDR RGB values assuming luminance-only Reinhard
-    /// </summary>
-    /// <param name="color">SDR RGB values</param>
-    /// <param name="exposure">Exposure to inversely tonemap at</param>
-    /// <returns>Approximated HDR RGB values</returns>
+    /// <inheritdoc/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly Vector3 PerformInverse(in Vector3 color, in float exposure)
 	{

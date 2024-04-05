@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Numerics;
 using System.Runtime.Intrinsics;
 
@@ -26,9 +25,9 @@ public static class ToneMapping
     /// <summary>
     /// Performs an image-wide inverse tonemap
     /// </summary>
-    /// <param name="pixels">Collection of pixels to tonemap</param>
-    /// <param name="exposure">Exposure to tonemap at</param>
-    /// <param name="toneMapper">What tonemap to assume as the inverse</param>
+    /// <param name="pixels">Span of pixels to tonemap</param>
+    /// <param name="exposure">Exposure to inversely tonemap at. NOTE: Currently non-functional</param>
+    /// <param name="toneMapper">The tonemap to assume as the inverse</param>
     // /// <param name="to">What tonemap to use for re-mapping the values back to SDR</param>
     // /// <param name="roundTrip">True if the the pixels should be re-tonemapped at all (produces approximated HDR output)</param>
     // /// <param name="alpha">True if the input contains alpha</param>
@@ -43,6 +42,12 @@ public static class ToneMapping
 
 
 
+    /// <summary>
+    /// Performs an image-wide tonemap
+    /// </summary>
+    /// <param name="pixels">Collection of pixels to tonemap</param>
+    /// <param name="exposure">Exposure to tonemap at</param>
+    /// <param name="toneMapper">The tonemap to use</param>
     public static void PerformImageTonemap(this ref Span<Vector128<float>> pixels, in float exposure, in IToneMapper toneMapper)
     {
         for (int i = 0; i < pixels.Length; i++)
@@ -50,6 +55,7 @@ public static class ToneMapping
             pixels[i] = new Vector4(LinearToSrgb(toneMapper.PerformTonemap(pixels[i].AsVector3(), exposure)), pixels[i][3]).AsVector128(); // Tonemap that guy
         }
     }
+
 
 
     /// <summary>

@@ -8,7 +8,7 @@ namespace Scratch;
 public interface IToneMapper
 {
     /// <summary>
-    /// Tonemaps HDR RGB values into SDR RGB values
+    /// Tonemaps HDR RGB values into SDR
     /// </summary>
     /// <param name="col">HDR RGB values</param>
     /// <param name="exposure">Exposure to tonemap at</param>
@@ -18,7 +18,7 @@ public interface IToneMapper
 
 
     /// <summary>
-    /// Inversely tonemaps SDR RGB values into HDR RGB values
+    /// Extrapolates SDR RGB values into HDR
     /// </summary>
     /// <param name="col">SDR RGB values</param>
     /// <param name="exposure">Exposure to inversely tonemap at</param>

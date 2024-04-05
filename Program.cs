@@ -65,12 +65,12 @@ public class Program
         quickFit.AddAlias("-q");
 
 
-        Option<bool> exportEXR = new(
-            "--exportEXR",
-            () => false,
-            "Exports an HDR (EXR) image at the specified start exposure");
+        // Option<bool> exportEXR = new(
+        //     "--exportEXR",
+        //     () => false,
+        //     "Exports an HDR (EXR) image at the specified start exposure");
 
-        exportEXR.AddAlias("-exr");
+        // exportEXR.AddAlias("-exr");
 
         
         Option<int?> maxConcurrency = new(
@@ -94,12 +94,12 @@ public class Program
         root.AddOption(stepSize);
         root.AddOption(steps);
         root.AddOption(quickFit);
-        root.AddOption(exportEXR);
+        // root.AddOption(exportEXR);
         root.AddOption(maxConcurrency);
         root.AddOption(whitePoint);
 
 
-        root.SetHandler(Execute, startExposure, stepSize, steps, exportEXR, quickFit, inputFile, maxConcurrency, whitePoint);
+        root.SetHandler(Execute, startExposure, stepSize, steps, quickFit, inputFile, maxConcurrency, whitePoint);
 
         return root.Invoke(args);
     }
@@ -112,16 +112,15 @@ public class Program
     /// <param name="startExposure">Exposure to start approximating at</param>
     /// <param name="stepSize">The size of the exposure steps to take</param>
     /// <param name="steps">The amount of exposure steps to take</param>
-    /// <param name="exportHDR">Whether to export accompanying EXR files for each exposure</param>
     /// <param name="quickFit">Whether to perform a quick fit, if available</param>
     /// <param name="inputFile">The input image to round-trip tonemap</param>
     /// <param name="maxConcurrency">The maximum amount of concurrency (image jobs) that can run at once, limited by CPU core count</param>
     /// <param name="white_point">The maximum white point</param>
+    // <param name="exportHDR">Whether to export accompanying EXR files for each exposure</param>
     public static void Execute(
         float startExposure,
         float stepSize,
         int steps,
-        bool exportHDR,
         bool quickFit,
         string inputFile,
         int? maxConcurrency,
