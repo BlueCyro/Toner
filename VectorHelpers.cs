@@ -13,14 +13,14 @@ public static class VectorHelpers
     /// <summary>
     /// Performs a component mask based on input flags. Essentially: "flags ? from : to" on a per-component basis
     /// </summary>
-    /// <param name="from"></param>
+    /// <param name="target"></param>
     /// <param name="other"></param>
-    /// <param name="flags"></param>
+    /// <param name="mask"></param>
     /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector3 Mask(in this Vector3 from, in Vector3 other, Vector128<float> flags)
+    public static Vector3 Mask(in this Vector3 target, in Vector3 other, Vector128<float> mask)
     {
-        return Vector128.ConditionalSelect(flags, from.AsVector128(), other.AsVector128()).AsVector3();
+        return Vector128.ConditionalSelect(mask, target.AsVector128(), other.AsVector128()).AsVector3();
     }
 
 
@@ -28,9 +28,9 @@ public static class VectorHelpers
     /// <summary>
     /// Does a component-wise greater or less than
     /// </summary>
-    /// <param name="left"></param>
-    /// <param name="right"></param>
-    /// <returns></returns>
+    /// <param name="left">Left side to compare</param>
+    /// <param name="right">Right side to compare</param>
+    /// <returns>Vector representing the component-wise results as zero or one.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector128<float> LessThanOrEqual(in this Vector3 left, in Vector3 right)
     {
@@ -39,22 +39,35 @@ public static class VectorHelpers
 
 
 
+    /// <summary>
+    /// Raises each component of the vector to a power
+    /// </summary>
+    /// <param name="baseValue">Base</param>
+    /// <param name="power">Power to raise to</param>
+    /// <returns>Raised Vector3</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector3 Pow(in this Vector3 A, in float B)
+    public static Vector3 Pow(in this Vector3 baseValue, in float power)
     {
         return new(
-            MathF.Pow(A.X, B),
-            MathF.Pow(A.Y, B),
-            MathF.Pow(A.Z, B));
+            MathF.Pow(baseValue.X, power),
+            MathF.Pow(baseValue.Y, power),
+            MathF.Pow(baseValue.Z, power));
     }
 
 
+
+    /// <summary>
+    /// Raises each component of the vector to a power, component-wise
+    /// </summary>
+    /// <param name="baseValue">Base</param>
+    /// <param name="power">Component-wise power to raise to</param>
+    /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector3 Pow(in this Vector3 A, in Vector3 B)
+    public static Vector3 Pow(in this Vector3 baseValue, in Vector3 power)
     {
         return new(
-            MathF.Pow(A.X, B.X),
-            MathF.Pow(A.Y, B.Y),
-            MathF.Pow(A.Z, B.Z));
+            MathF.Pow(baseValue.X, power.X),
+            MathF.Pow(baseValue.Y, power.Y),
+            MathF.Pow(baseValue.Z, power.Z));
     }
 }

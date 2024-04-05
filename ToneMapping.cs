@@ -1,7 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Numerics;
-using ImageMagick;
 using System.Runtime.Intrinsics;
 
 
@@ -25,75 +24,32 @@ public static class ToneMapping
 
 
     /// <summary>
-    /// Performs a round-trip tonemap on a single RGB color
-    /// </summary>
-    /// <param name="color">The color to round-trip tonemap</param>
-    /// <param name="exposure">The exposure to tonemap at</param>
-    /// <param name="roundTrip">True if the color should be re-tonemapped at all (produces approximated HDR output)</param>
-    /// <param name="from">What tonemap to assume as the inverse</param>
-    /// <param name="to">What tonemap to use for re-mapping the values back to SDR</param>
-    /// <returns>Re-tonemapped or approximated HDR RGB color</returns>
-    public static Vector3 PerformTonemap(in Vector3 color, in float exposure, in bool roundTrip, in IToneMapper from, in IToneMapper to)
-    {
-        Vector3 col = from.PerformInverse(SrgbToLinear(color / 65535f), 1f);
-
-        if (roundTrip)
-            col = LinearToSrgb(Vector3.Clamp(to.PerformTonemap(col, exposure), Vector3.Zero, Vector3.One));
-        else
-            col *= MathF.Exp(exposure);
-
-
-        col *= 65535f;
-
-        return col;
-    }
-
-
-
-    /// <summary>
-    /// Performs an image-wide tonemap
+    /// Performs an image-wide inverse tonemap
     /// </summary>
     /// <param name="pixels">Collection of pixels to tonemap</param>
     /// <param name="exposure">Exposure to tonemap at</param>
-    /// <param name="from">What tonemap to assume as the inverse</param>
-    /// <param name="to">What tonemap to use for re-mapping the values back to SDR</param>
-    /// <param name="roundTrip">True if the the pixels should be re-tonemapped at all (produces approximated HDR output)</param>
-    /// <param name="alpha">True if the input contains alpha</param>
-    public static void PerformImageTonemap(this IPixelCollection<float> pixels, float exposure, IToneMapper from, IToneMapper to, bool roundTrip = true, bool alpha = false)
+    /// <param name="toneMapper">What tonemap to assume as the inverse</param>
+    // /// <param name="to">What tonemap to use for re-mapping the values back to SDR</param>
+    // /// <param name="roundTrip">True if the the pixels should be re-tonemapped at all (produces approximated HDR output)</param>
+    // /// <param name="alpha">True if the input contains alpha</param>
+    public static void PerformInverseImageTonemap(this ref Span<Vector128<float>> pixels, in float exposure, in IToneMapper toneMapper)
     {
-        float[]? values = pixels.GetValues();
-        Span<float> newValues = values.AsSpan();
-        if (alpha) // Vector4 if alpha
+        for (int i = 0; i < pixels.Length; i++)
         {
-            Span<Vector4> colors = MemoryMarshal.Cast<float, Vector4>(newValues); // Interpret the values as a Vector3 span - GO VERY FAST
-
-
-            for (int i = 0; i < colors.Length; i++)
-            {
-                colors[i] = new Vector4(
-                    PerformTonemap(new Vector3(colors[i].X, colors[i].Y, colors[i].Z), exposure, roundTrip, from, to),
-                    colors[i].W); // Tonemap that guy
-            }
-
-
-            newValues = MemoryMarshal.Cast<Vector4, float>(colors); // Disguise it as my own cooking (interpret back to floats)
+            // We can actually avoid a whole mess of branches here with the interpretation to Vector3
+            pixels[i] = new Vector4(toneMapper.PerformInverse(SrgbToLinear(pixels[i].AsVector3()), exposure), pixels[i][3]).AsVector128(); // Extrapolate that guy
         }
-        else // The same, but with just Vector3
-        {
-            Span<Vector3> colors = MemoryMarshal.Cast<float, Vector3>(values.AsSpan());
-
-
-            for (int i = 0; i < colors.Length; i++)
-            {
-                colors[i] = PerformTonemap(colors[i], exposure, roundTrip, from, to);
-            }
-
-
-            newValues = MemoryMarshal.Cast<Vector3, float>(colors);
-        }
-        pixels.SetPixels(newValues); // Write the new pixels to the 
     }
 
+
+
+    public static void PerformImageTonemap(this ref Span<Vector128<float>> pixels, in float exposure, in IToneMapper toneMapper)
+    {
+        for (int i = 0; i < pixels.Length; i++)
+        {
+            pixels[i] = new Vector4(toneMapper.PerformTonemap(LinearToSrgb(pixels[i].AsVector3()), exposure), pixels[i][3]).AsVector128(); // Tonemap that guy
+        }
+    }
 
 
     /// <summary>

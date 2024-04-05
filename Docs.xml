@@ -23,7 +23,7 @@
             <param name="startExposure">Exposure to start approximating at</param>
             <param name="stepSize">The size of the exposure steps to take</param>
             <param name="steps">The amount of exposure steps to take</param>
-            <param name="exportEXR">Whether to export accompanying EXR files for each exposure</param>
+            <param name="exportHDR">Whether to export accompanying EXR files for each exposure</param>
             <param name="quickFit">Whether to perform a quick fit, if available</param>
             <param name="inputFile">The input image to round-trip tonemap</param>
             <param name="maxConcurrency">The maximum amount of concurrency (image jobs) that can run at once, limited by CPU core count</param>
@@ -184,27 +184,13 @@
             All things tonemapping-related
             </summary>
         </member>
-        <member name="M:Scratch.ToneMapping.PerformTonemap(System.Numerics.Vector3@,System.Single@,System.Boolean@,Scratch.IToneMapper@,Scratch.IToneMapper@)">
+        <member name="M:Scratch.ToneMapping.PerformInverseImageTonemap(System.Span{System.Runtime.Intrinsics.Vector128{System.Single}}@,System.Single@,Scratch.IToneMapper@)">
             <summary>
-            Performs a round-trip tonemap on a single RGB color
-            </summary>
-            <param name="color">The color to round-trip tonemap</param>
-            <param name="exposure">The exposure to tonemap at</param>
-            <param name="roundTrip">True if the color should be re-tonemapped at all (produces approximated HDR output)</param>
-            <param name="from">What tonemap to assume as the inverse</param>
-            <param name="to">What tonemap to use for re-mapping the values back to SDR</param>
-            <returns>Re-tonemapped or approximated HDR RGB color</returns>
-        </member>
-        <member name="M:Scratch.ToneMapping.PerformImageTonemap(ImageMagick.IPixelCollection{System.Single},System.Single,Scratch.IToneMapper,Scratch.IToneMapper,System.Boolean,System.Boolean)">
-            <summary>
-            Performs an image-wide tonemap
+            Performs an image-wide inverse tonemap
             </summary>
             <param name="pixels">Collection of pixels to tonemap</param>
             <param name="exposure">Exposure to tonemap at</param>
-            <param name="from">What tonemap to assume as the inverse</param>
-            <param name="to">What tonemap to use for re-mapping the values back to SDR</param>
-            <param name="roundTrip">True if the the pixels should be re-tonemapped at all (produces approximated HDR output)</param>
-            <param name="alpha">True if the input contains alpha</param>
+            <param name="toneMapper">What tonemap to assume as the inverse</param>
         </member>
         <member name="M:Scratch.ToneMapping.SrgbToLinear(System.Numerics.Vector3@)">
             <summary>
@@ -244,17 +230,33 @@
             <summary>
             Performs a component mask based on input flags. Essentially: "flags ? from : to" on a per-component basis
             </summary>
-            <param name="from"></param>
+            <param name="target"></param>
             <param name="other"></param>
-            <param name="flags"></param>
+            <param name="mask"></param>
             <returns></returns>
         </member>
         <member name="M:Scratch.VectorHelpers.LessThanOrEqual(System.Numerics.Vector3@,System.Numerics.Vector3@)">
             <summary>
             Does a component-wise greater or less than
             </summary>
-            <param name="left"></param>
-            <param name="right"></param>
+            <param name="left">Left side to compare</param>
+            <param name="right">Right side to compare</param>
+            <returns>Vector representing the component-wise results as zero or one.</returns>
+        </member>
+        <member name="M:Scratch.VectorHelpers.Pow(System.Numerics.Vector3@,System.Single@)">
+            <summary>
+            Raises each component of the vector to a power
+            </summary>
+            <param name="baseValue">Base</param>
+            <param name="power">Power to raise to</param>
+            <returns>Raised Vector3</returns>
+        </member>
+        <member name="M:Scratch.VectorHelpers.Pow(System.Numerics.Vector3@,System.Numerics.Vector3@)">
+            <summary>
+            Raises each component of the vector to a power, component-wise
+            </summary>
+            <param name="baseValue">Base</param>
+            <param name="power">Component-wise power to raise to</param>
             <returns></returns>
         </member>
     </members>

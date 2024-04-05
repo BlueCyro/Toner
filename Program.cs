@@ -1,7 +1,14 @@
-﻿using ImageMagick;
-using System.Collections.Concurrent;
+﻿using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Bmp;
+using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Formats.Tga;
+using SixLabors.ImageSharp.Formats.Tiff;
+using SixLabors.ImageSharp.Formats.Webp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 using System.CommandLine;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 
 
@@ -109,7 +116,7 @@ public class Program
     /// <param name="startExposure">Exposure to start approximating at</param>
     /// <param name="stepSize">The size of the exposure steps to take</param>
     /// <param name="steps">The amount of exposure steps to take</param>
-    /// <param name="exportEXR">Whether to export accompanying EXR files for each exposure</param>
+    /// <param name="exportHDR">Whether to export accompanying EXR files for each exposure</param>
     /// <param name="quickFit">Whether to perform a quick fit, if available</param>
     /// <param name="inputFile">The input image to round-trip tonemap</param>
     /// <param name="maxConcurrency">The maximum amount of concurrency (image jobs) that can run at once, limited by CPU core count</param>
@@ -118,7 +125,7 @@ public class Program
         float startExposure,
         float stepSize,
         int steps,
-        bool exportEXR,
+        bool exportHDR,
         bool quickFit,
         string inputFile,
         int? maxConcurrency,
@@ -134,17 +141,10 @@ public class Program
             return;
         }
 
-
-        var settings = new MagickReadSettings()
-        {
-            ColorSpace = ColorSpace.sRGB,
-        };
-
-
         var range = Enumerable.Range(0, steps);
         
         
-        IToneMapper from = new BT2446ATonemapper(100f, 1000f);
+        IToneMapper from = new ReinhardLuminanceTonemapper(white_point);
         IToneMapper to = new ACESTonemapper(quickFit);
         
 
@@ -156,49 +156,53 @@ public class Program
             Console.WriteLine($"Setting max parallelism to {val}");
         }
 
-        ConcurrentBag<(MagickImage image, FileStream stream)> streams = [];
+
+        using Image source = Image.Load<Rgba32>(inputFile);
+
 
         query.ForAll(n =>
         {
-            var fromFile = new MagickImage(inputFile, settings);
-            var pixels = fromFile.GetPixels();
+            Image<Rgba32> image = source.CloneAs<Rgba32>();
             float exposure = startExposure + (n * stepSize);
-
-
-            Console.WriteLine($"Performing tonemapping for Image #{n}");
-            pixels.PerformImageTonemap(exposure, from, to, alpha: fromFile.HasAlpha);
-            Console.WriteLine($"Finished Image #{n}");
-
-
             float roundedExp = MathF.Round(exposure, 3);
-            // fromFile.Settings.SetDefine(MagickFormat.Png, "compression-level", 5);
-            // fromFile.Settings.SetDefine(MagickFormat.Png, "compression-strategy", 2);
-            streams.Add((fromFile, File.OpenWrite($"./{OUTPUT_DIR}/#{n} (exposure {roundedExp}).bmp")));
-            // fromFile.Write(newImage);
+            
+            
+            Console.WriteLine($"Performing tonemapping for Image #{n}");
+            
+            
+            image.Mutate(c => c.ProcessPixelRowsAsVector4(row => {
+                Span<Vector128<float>> rowValues = MemoryMarshal.Cast<Vector4, Vector128<float>>(row);
+                rowValues.PerformInverseImageTonemap(1f, from);
+                rowValues.PerformImageTonemap(exposure, to);
+            }));
+            
 
-            if (exportEXR)
-            {
-                var fromEXR = new MagickImage(inputFile, settings);
-                var exrPixels = fromEXR.GetPixels();
-                exrPixels.PerformImageTonemap(exposure, from, to, false);
+            // if (exportHDR)
+            // {
+            //     using FileStream EXROutStream = File.OpenWrite($"./{OUTPUT_DIR}/#{n} (exposure {roundedExp}).tiff");
+            //     var encoder = new TiffEncoder()
+            //     {
+            //         BitsPerPixel = TiffBitsPerPixel.Bit32
+            //     };
+            //     image.Save(EXROutStream, encoder);
+            // }
+            
+            
+
+            // image.Mutate(c => c.ProcessPixelRowsAsVector4(row => {
+            //     Span<Vector128<float>> rowValues = MemoryMarshal.Cast<Vector4, Vector128<float>>(row);
+            //     rowValues.PerformImageTonemap(exposure, to);
+            // }));
+        
+
+            Console.WriteLine($"Finished Image #{n}");
+            using FileStream outStream = File.OpenWrite($"./{OUTPUT_DIR}/#{n} (exposure {roundedExp}).bmp");
 
 
-                fromEXR.Format = MagickFormat.Exr;
-                //fromEXR.Settings.SetDefine(MagickFormat.Exr, "color-type", "RGBA");
-                fromEXR.SetCompression(CompressionMethod.Zip);
-                streams.Add((fromEXR, File.OpenWrite($"./{OUTPUT_DIR}/#{n} (exposure {roundedExp}).exr")));
-                
-                
-                // fromEXR.Write(newEXR);
-            }
-        });
-
-        streams.AsParallel().ForAll(s =>
-        {
-            Console.WriteLine($"Writing image {s.stream.Name}");
-            s.image.Write(s.stream);
-            s.image.Dispose();
-            s.stream.Dispose();
+            Console.WriteLine($"Writing image {outStream.Name}");
+            var encoder = new BmpEncoder();
+            image.Save(outStream, encoder);
+            Console.WriteLine($"Image #{n} finished processing!");
         });
     }
 }
