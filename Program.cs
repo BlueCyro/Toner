@@ -35,7 +35,7 @@ public class Program
 
         Option<float> startExposure = new(
             "--startExposure",
-            () => 0f,
+            () => -2f,
             "The exposure level to start at");
         
         startExposure.AddAlias("-e");
@@ -51,7 +51,7 @@ public class Program
 
         Option<int> steps = new(
             "--steps",
-            () => 6,
+            () => 20,
             "The amount of exposure steps generate starting from the initial exposure (can be negative)");
 
         steps.AddAlias("-c");
@@ -84,9 +84,17 @@ public class Program
         Option<float> whitePoint = new(
             "--whitePoint",
             () => 1f,
-            "Defines the \"maximum\" white point of the input image - values higher than one will make highlights more saturated");
+            "Defines the maximum white point of the input image - values higher than one will make highlights more saturated");
 
         whitePoint.AddAlias("-w");
+
+
+        Option<float> contrast = new(
+            "--contrast",
+            () => 1f,
+            "Defines the contrast to apply post-tonemapping");
+
+        contrast.AddAlias("-ct");
 
 
         root.AddArgument(inputFile);
@@ -94,12 +102,12 @@ public class Program
         root.AddOption(stepSize);
         root.AddOption(steps);
         root.AddOption(quickFit);
-        // root.AddOption(exportEXR);
+        root.AddOption(contrast);
         root.AddOption(maxConcurrency);
         root.AddOption(whitePoint);
 
 
-        root.SetHandler(Execute, startExposure, stepSize, steps, quickFit, inputFile, maxConcurrency, whitePoint);
+        root.SetHandler(Execute, startExposure, stepSize, steps, quickFit, inputFile, maxConcurrency, whitePoint, contrast);
 
         return root.Invoke(args);
     }
@@ -116,6 +124,7 @@ public class Program
     /// <param name="inputFile">The input image to round-trip tonemap</param>
     /// <param name="maxConcurrency">The maximum amount of concurrency (image jobs) that can run at once, limited by CPU core count</param>
     /// <param name="white_point">The maximum white point</param>
+    /// <param name="contrast">The contrast to apply post-tonemapping</param>
     // <param name="exportHDR">Whether to export accompanying EXR files for each exposure</param>
     public static void Execute(
         float startExposure,
@@ -124,7 +133,8 @@ public class Program
         bool quickFit,
         string inputFile,
         int? maxConcurrency,
-        float white_point)
+        float white_point,
+        float contrast)
     {
         if (!Directory.Exists(OUTPUT_DIR))
             Directory.CreateDirectory(OUTPUT_DIR);
@@ -140,7 +150,7 @@ public class Program
         
         
         IToneMapper from = new ReinhardLuminanceTonemapper(white_point);
-        IToneMapper to = new ACESTonemapper(quickFit);
+        IToneMapper to = new ACESTonemapper(quickFit, contrast);
         
 
         ParallelQuery<int> query = range.AsParallel();
@@ -171,7 +181,7 @@ public class Program
                 rowValues.PerformImageTonemap(exposure, to);
             }));
             
-
+            // ImageSharp doesn't support HDR yet :(((((
             // if (exportHDR)
             // {
             //     using FileStream EXROutStream = File.OpenWrite($"./{OUTPUT_DIR}/#{n} (exposure {roundedExp}).tiff");
