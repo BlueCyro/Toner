@@ -8,7 +8,8 @@ namespace Scratch;
 /// Performs BakingLab ACES tonemapping: <see href="https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl"/>
 /// </summary>
 /// <param name="quick">If true, skips the matrix multiplication when <see cref="PerformTonemap"/> is called. Saturates brighter colors.</param>
-public struct ACESTonemapper(bool quick = false) : IToneMapper
+/// <param name="contrast">Defines contrast applied to the end result of tonemapping</param>
+public struct ACESTonemapper(bool quick = false, float contrast = 1f) : IToneMapper
 {
     static Vector3 A = new(0.0245786f);
 	static Vector3 B = new(0.000090537f);
@@ -80,10 +81,7 @@ public struct ACESTonemapper(bool quick = false) : IToneMapper
             color = Vector3.Transform(color, ACESOutputMat);
         }
 
-		// Clamp to [0, 1]
-		color = Vector3.Clamp(color, Vector3.Zero, Vector3.One);
-
-		return color;
+		return Vector3.Clamp(color, Vector3.Zero, Vector3.One).Pow(contrast); // Clamp to [0, 1]
 	}
 
 
