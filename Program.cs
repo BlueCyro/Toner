@@ -1,5 +1,5 @@
 ﻿using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats.Bmp;
+using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using System.CommandLine;
@@ -201,11 +201,16 @@ public class Program
         
 
             Console.WriteLine($"Finished Image #{n}");
-            using FileStream outStream = File.OpenWrite($"./{OUTPUT_DIR}/#{n} (exposure {roundedExp}).bmp");
+            using FileStream outStream = File.OpenWrite($"./{OUTPUT_DIR}/#{n} (exposure {roundedExp}).png");
 
 
             Console.WriteLine($"Writing image {outStream.Name}");
-            var encoder = new BmpEncoder();
+            var encoder = new PngEncoder()
+            {
+                CompressionLevel = PngCompressionLevel.Level1,
+            };
+            // ImageEncoder encoder = new QoiEncoder();
+            //var encoder = new BmpEncoder();
             image.Save(outStream, encoder);
             Console.WriteLine($"Image #{n} finished processing!");
         });
