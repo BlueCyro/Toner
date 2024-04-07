@@ -36,7 +36,7 @@ Options:
 
 # Examples
 
-Here is an example from a picture in a game known as [Resonite](https://www.resonite.com). Resonite notably does not have any tonemapping, and thus has no curve applied to the RGB output color of the game. This makes it prime for use with this tool, as there are are no competing transforms on the image.
+Here is an example from a picture in a game known as [Resonite](https://www.resonite.com). Resonite notably does not have any tonemapping or color grading, and thus has no curve applied to the RGB output color of the game. This makes it prime for use with this tool, as there are are no competing transforms on the image. The following was generated using the defaults, but with a contrast of 0.88 to loosen the deep blacks up a bit.
 
 
 Original:
