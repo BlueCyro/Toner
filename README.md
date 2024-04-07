@@ -33,3 +33,37 @@ Options:
   For example, if you wanted to tonemap an image starting at -2 exposure, and extrapolate 20 steps up by 0.2 increments, you'd do:
 
   * `Toner -e -2 -s 0.2 -c 20`
+
+# Examples
+
+Here is an example from a picture in a game known as [Resonite](https://www.resonite.com). Resonite notably does not have any tonemapping, and thus has no curve applied to the RGB output color of the game. This makes it prime for use with this tool, as there are are no competing transforms on the image.
+
+
+Original:
+
+<img src="Examples/Porch%20Original.jpg" width="600" />
+
+Extrapolated -2 exposure:
+
+<img src="Examples/Porch%20-2.png" width="600" />
+
+Extrapolated -0.6 exposure:
+
+<img src="Examples/Porch%20-0.6.png" width="600" />
+
+Extrapolated 0.8 exposure:
+
+<img src="Examples/Porch%200.8.png" width="600" />
+
+# What's going on here?
+
+You may note that the color transform of the image has changed, and the overall look as taken on a more filmic appearance. This is because to achieve a more realistic representation of exposure, HDR data is extrapolated assuming a luminance-based inverse Reinhard function (this just means that the SDR image is blown up into HDR with a math curve), after which, it is premultiplied according to the current exposure and the SDR data is restored using the BakingLab ACES tonemapping function. (this means squishing the HDR data back down to what your monitor can display)
+
+The ACES tonemapper is what gives the image this filmic appearance, and is what makes the color take on more realistic properties. In sum, it tries to map HDR values into SDR in a pleasing way that is more reminiscent of how your eye sees dynamic scenes in real life. For example: being able to observe a bright sunny beach, but also see under an umbrella at the same time even though the sun is making the beach orders of magnitude brighter than under the umbrella.
+
+
+<p align="right">
+    <sub>
+        💙💚 Feel free to support me via <a href="https://paypal.me/BlueCyro">PayPal</a>
+    </sub>
+</div>
