@@ -26,6 +26,8 @@ Options:
   -m, --maxConcurrency <maxConcurrency>  Defines the maximum amount of threads to use (e.g. how many pictures are generated at once) when defined - otherwise auto []
 
   -w, --whitePoint <whitePoint>          Defines the "maximum" white point of the input image - values higher than one will make highlights more saturated [default: 1]
+
+  -ct, --contrast <contrast>             Defines the contrast to apply post-tonemapping [default: 1]
   ```
 
   For example, if you wanted to tonemap an image starting at -2 exposure, and extrapolate 20 steps up by 0.2 increments, you'd do:
