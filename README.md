@@ -15,11 +15,11 @@ Toner [<inputFile>] [options]
 <inputFile>  The file to operate on [default: ./input.png]
 
 Options:
-  -e, --startExposure <startExposure>    The exposure level to start at [default: 0]
+  -e, --startExposure <startExposure>    The exposure level to start at [default: -2]
 
   -s, --stepSize <stepSize>              The size of each exposure step to take [default: 0.2]
 
-  -c, --steps <steps>                    The amount of exposure steps generate starting from the initial exposure (can be negative) [default: 6]
+  -c, --steps <steps>                    The amount of exposure steps generate starting from the initial exposure (can be negative) [default: 20]
 
   -q, --quickFit                         Skips the matrix multiplication for ACES (results in slightly over-saturated bright colors) [default: False]
 
