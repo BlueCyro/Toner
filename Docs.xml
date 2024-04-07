@@ -16,7 +16,7 @@
             <param name="args">Optional arguments</param>
             <returns></returns>
         </member>
-        <member name="M:Scratch.Program.Execute(System.Single,System.Single,System.Int32,System.Boolean,System.String,System.Nullable{System.Int32},System.Single)">
+        <member name="M:Scratch.Program.Execute(System.Single,System.Single,System.Int32,System.Boolean,System.String,System.Nullable{System.Int32},System.Single,System.Single)">
             <summary>
             Executes the main functionality of the program
             </summary>
@@ -27,18 +27,21 @@
             <param name="inputFile">The input image to round-trip tonemap</param>
             <param name="maxConcurrency">The maximum amount of concurrency (image jobs) that can run at once, limited by CPU core count</param>
             <param name="white_point">The maximum white point</param>
+            <param name="contrast">The contrast to apply post-tonemapping</param>
         </member>
         <member name="T:Scratch.ACESTonemapper">
             <summary>
             Performs BakingLab ACES tonemapping: <see href="https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl"/>
             </summary>
             <param name="quick">If true, skips the matrix multiplication when <see cref="M:Scratch.ACESTonemapper.PerformTonemap(System.Numerics.Vector3@,System.Single@)"/> is called. Saturates brighter colors.</param>
+            <param name="contrast">Defines contrast applied to the end result of tonemapping</param>
         </member>
-        <member name="M:Scratch.ACESTonemapper.#ctor(System.Boolean)">
+        <member name="M:Scratch.ACESTonemapper.#ctor(System.Boolean,System.Single)">
             <summary>
             Performs BakingLab ACES tonemapping: <see href="https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl"/>
             </summary>
             <param name="quick">If true, skips the matrix multiplication when <see cref="M:Scratch.ACESTonemapper.PerformTonemap(System.Numerics.Vector3@,System.Single@)"/> is called. Saturates brighter colors.</param>
+            <param name="contrast">Defines contrast applied to the end result of tonemapping</param>
         </member>
         <member name="F:Scratch.ACESTonemapper.ACESInputMat">
             <summary>

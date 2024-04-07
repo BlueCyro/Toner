@@ -35,7 +35,7 @@ public static class ToneMapping
     {
         for (int i = 0; i < pixels.Length; i++)
         {
-            // We can actually avoid a whole mess of branches here with the interpretation to Vector3
+            // Avoid a whole mess of branches here with the interpretation to Vector3
             pixels[i] = new Vector4(toneMapper.PerformInverse(SrgbToLinear(pixels[i].AsVector3()), exposure), pixels[i][3]).AsVector128(); // Extrapolate that guy
         }
     }
@@ -52,6 +52,7 @@ public static class ToneMapping
     {
         for (int i = 0; i < pixels.Length; i++)
         {
+            // Avoid a whole mess of branches here with the interpretation to Vector3
             pixels[i] = new Vector4(LinearToSrgb(toneMapper.PerformTonemap(pixels[i].AsVector3(), exposure)), pixels[i][3]).AsVector128(); // Tonemap that guy
         }
     }
